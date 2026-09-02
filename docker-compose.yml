@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: barops-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: barops
+      POSTGRES_USER: barops
+      POSTGRES_PASSWORD: barops_local_pw
+    ports:
+      - "5432:5432"
+    volumes:
+      - barops_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U barops -d barops"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis — thêm ở cuối Module 1 (cache dashboard, session).
+  # Bỏ comment khi cần dùng, không chặn tiến độ core.
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: barops-redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+
+volumes:
+  barops_pg_data:

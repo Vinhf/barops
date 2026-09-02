@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: barops-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/barops
+    username: barops
+    password: barops_local_pw
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      # validate ở prod, update chỉ dùng lúc dev để tiện — sau này chuyển qua Flyway/Liquibase
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: public
+
+server:
+  port: 8080
+
+barops:
+  jwt:
+    # CHỈ dùng cho local dev — khi deploy thật phải để trong biến môi trường, không commit secret thật
+    secret: "dev-only-change-me-CHANGE_THIS_BEFORE_DEPLOY_0123456789"
+    access-token-expiration-minutes: 30
+    refresh-token-expiration-days: 7

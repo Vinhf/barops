@@ -1,0 +1,14 @@
+:root {
+  /* Giá trị mặc định — sẽ bị override động theo Business.theme_config lúc login (Sprint 4) */
+  --primary-color: #1a1a1a;
+  --secondary-color: #d4af37;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--primary-color);
+}
