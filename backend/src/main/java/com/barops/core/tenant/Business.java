@@ -8,8 +8,13 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Tenant gốc. Business KHÔNG extends BaseTenantEntity (nó không thuộc về tenant nào,
+ * Tenant gốc — hiện tại chỉ có 1 bản ghi Business duy nhất (1 quán, nhiều chi nhánh),
+ * nhưng vẫn giữ kiến trúc tách Business/Branch để không phải sửa lại nếu sau này mở thêm
+ * thương hiệu khác. Business KHÔNG extends BaseTenantEntity (nó không thuộc về tenant nào,
  * chính nó LÀ tenant) — chỉ extends BaseEntity để có id + timestamps.
+ *
+ * businessHoursConfig KHÔNG còn ở đây — đã chuyển xuống Branch (xem docs/ERD.md,
+ * mục "thay đổi định hướng") vì mỗi chi nhánh có giờ mở/đóng khác nhau.
  */
 @Getter
 @Setter
@@ -30,7 +35,4 @@ public class Business extends BaseEntity {
 
     @Embedded
     private ThemeConfig themeConfig = new ThemeConfig();
-
-    @Embedded
-    private BusinessHoursConfig businessHoursConfig = new BusinessHoursConfig();
 }

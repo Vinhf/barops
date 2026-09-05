@@ -1,20 +1,24 @@
 # BarOps
 
-CRM + ERP cho bar/pub, multi-tenant SaaS. Xem chi tiết trong `docs/` (bổ sung dần theo doc setup gốc).
+Hệ thống quản lý vận hành cho 1 quán bar có nhiều chi nhánh (Business — nhiều Branch).
+Xem `docs/ERD.md` cho data model, `docs/sprint-1-plan.md` cho kế hoạch Sprint 1.
 
 ## Cấu trúc
 
 ```
 barops/
  ├─ docker-compose.yml       → Postgres local (Redis thêm sau)
- ├─ backend/                  → Spring Boot 3 (Java 17)
- │   (Java 25, Spring Boot 4.1.1)
+ ├─ backend/                  → Spring Boot 4.1.1, Java 25
  │   └─ src/main/java/com/barops/
- │       ├─ core/tenant/      → Business, BaseTenantEntity, TenantContext, TenantAwareRepository
- │       ├─ core/auth/        → User, Role (JWT/login làm Sprint 1)
- │       └─ pos/              → Module 1 (Sprint 1-3)
+ │       ├─ core/tenant/      → Business, Branch, BaseTenantEntity, BaseBranchEntity,
+ │       │                       TenantContext, TenantAwareRepository
+ │       ├─ core/auth/        → User (business_id + branch_id), JwtService,
+ │       │                       JwtAuthenticationFilter, CallerBranchContext,
+ │       │                       BranchAccessGuard, AuthController, UserController
+ │       ├─ core/config/      → SecurityConfig, OpenApiConfig (Swagger)
+ │       └─ pos/              → chưa code (Ingredient/Product/Recipe/Order — Sprint 1 Giai đoạn B)
  ├─ frontend/                 → Next.js + TypeScript (skeleton, build UI từ Sprint 4)
- └─ docs/                     → ERD, kiến trúc, ghi chú sprint
+ └─ docs/                     → ERD, sprint plan
 ```
 
 ## Chạy lần đầu (Windows, PowerShell)
@@ -24,24 +28,23 @@ barops/
 cd barops
 docker compose up -d
 ```
-Kiểm tra container chạy: `docker ps` — thấy `barops-postgres` là "healthy".
+Kiểm tra: `docker ps` — thấy `barops-postgres` là "healthy".
 
 ### 2. Chạy backend
-```powershell
-cd backend
-.\mvnw.cmd spring-boot:run
-```
-> Lưu ý: repo này chưa kèm sẵn Maven Wrapper (`mvnw.cmd`). Cách nhanh nhất để có nó:
-> mở project bằng VS Code (đã cài Extension Pack for Java + Spring Boot Extension Pack) →
-> VS Code sẽ tự nhận `pom.xml` và cho bạn chạy `BarOpsApplication.java` trực tiếp bằng nút Run
-> phía trên hàm `main`, không cần mvnw. Hoặc nếu có Maven cài sẵn: `mvn spring-boot:run`.
+Mở `backend/src/main/java/com/barops/BarOpsApplication.java` trong VS Code, bấm nút Run
+phía trên hàm `main` (cần Extension Pack for Java + Spring Boot Extension Pack).
+Đợi tới khi thấy `Started BarOpsApplication` — backend chạy ở `http://localhost:8080`.
 
-Backend chạy ở `http://localhost:8080`. Vì `ddl-auto: update` (xem `application.yml`),
-Hibernate sẽ tự tạo bảng `businesses`, `users` trong Postgres lúc khởi động lần đầu — vào
-kiểm tra bằng extension "PostgreSQL" trong VS Code, connect với:
-- host: `localhost`, port: `5432`, database: `barops`, user: `barops`, password: `barops_local_pw`
+`ddl-auto: update` (trong `application.yml`) khiến Hibernate tự tạo bảng `businesses`,
+`branches`, `users` lúc khởi động lần đầu.
 
-### 3. Chạy frontend
+### 3. Test API bằng Swagger UI (thay vì Postman)
+Mở `http://localhost:8080/swagger-ui/index.html` — danh sách toàn bộ endpoint tự sinh từ code.
+1. Mở `POST /api/auth/register` (không khoá — public), "Try it out", điền JSON mẫu, Execute — copy `accessToken` trong response.
+2. Bấm **Authorize** (góc trên bên phải), dán `accessToken`, Authorize rồi Close.
+3. Từ giờ mọi endpoint có ổ khoá (VD `GET /api/users`) khi Execute đều tự gắn kèm token — không cần tự thêm header `Authorization` như Postman.
+
+### 4. Chạy frontend
 ```powershell
 cd frontend
 npm install
@@ -50,14 +53,16 @@ npm run dev
 Frontend chạy ở `http://localhost:3000`.
 
 ## Nguyên tắc bắt buộc khi code tiếp (đừng quên)
-- Mọi entity nghiệp vụ mới → `extends BaseTenantEntity` (không tự thêm field `businessId` riêng).
-- Mọi repository mới → `extends TenantAwareRepository<T>` (không tự viết `WHERE business_id = ?`).
-- Đọc `docs/ERD.md` và hoàn thiện ERD chi tiết TRƯỚC khi bắt đầu Sprint 1.
+- Entity thuộc về Business (catalog dùng chung) → `extends BaseTenantEntity`.
+- Entity thuộc về 1 Branch cụ thể (Table, Order, BranchMenuItem...) → `extends BaseBranchEntity`,
+  và PHẢI gọi `BranchAccessGuard.assertAccess(branchId)` ở đầu controller trước khi set `branchId` thủ công.
+- Repository mới → `extends TenantAwareRepository<T>` (tự lọc `business_id`, không tự viết `WHERE` thủ công).
 
-## Sprint hiện tại: Sprint 0
-Việc còn lại trong Sprint 0 (xem mục 7 trong doc gốc):
-- [x] Setup package structure (modular)
-- [x] `Business` entity + cơ chế xác định tenant (TenantContext, base repository)
-- [x] Docker Compose Postgres local
-- [ ] ERD chi tiết (xem `docs/ERD.md`, còn dở)
-- [ ] Setup GitHub Project board + label (làm trên GitHub, không phải trong code)
+## Tiến độ
+- [x] Sprint 0: package structure, `Business`/`Branch` + tenant context, Docker Postgres.
+- [x] Sprint 1 — Giai đoạn A: Auth (JWT access+refresh mang `businessId`+`branchId`+`role`),
+      `BranchAccessGuard`, Swagger UI.
+- [ ] Sprint 1 — Giai đoạn B: CRUD `Product`/`Ingredient`/`Recipe` (catalog) +
+      `BranchMenuItem`/`BranchIngredientStock` (theo chi nhánh).
+- [ ] ERD vẽ hình chi tiết (`docs/ERD.md` còn ở dạng chữ).
+- [ ] GitHub Project board + label (làm trên GitHub, không phải trong code).
