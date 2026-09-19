@@ -1,9 +1,11 @@
 package com.barops.backend.core.product;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,35 +21,40 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/products")
 public class ProductController {
 
-	private final ProductService productService;
+    private final ProductService productService;
 
-	public ProductController(ProductService productService) {
-		this.productService = productService;
-	}
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
 
-	@GetMapping
-	public List<Product> findAll() {
-		return productService.findAll();
-	}
+    @GetMapping
+    @PreAuthorize("hasAuthority('PRODUCT_READ')")
+    public List<Product> findAll() {
+        return productService.findAll();
+    }
 
-	@GetMapping("/{id}")
-	public Product findById(@PathVariable Long id) {
-		return productService.findById(id);
-	}
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('PRODUCT_READ')")
+    public Product findById(@PathVariable UUID id) {
+        return productService.findById(id);
+    }
 
-	@PostMapping
-	public ResponseEntity<Product> create(@Valid @RequestBody Product product) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(productService.create(product));
-	}
+    @PostMapping
+    @PreAuthorize("hasAuthority('PRODUCT_WRITE')")
+    public ResponseEntity<Product> create(@Valid @RequestBody ProductRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(productService.create(request));
+    }
 
-	@PutMapping("/{id}")
-	public Product update(@PathVariable Long id, @Valid @RequestBody Product product) {
-		return productService.update(id, product);
-	}
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
+    public Product update(@PathVariable UUID id, @Valid @RequestBody ProductRequest request) {
+        return productService.update(id, request);
+    }
 
-	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> delete(@PathVariable Long id) {
-		productService.delete(id);
-		return ResponseEntity.noContent().build();
-	}
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('PRODUCT_DELETE')")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        productService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

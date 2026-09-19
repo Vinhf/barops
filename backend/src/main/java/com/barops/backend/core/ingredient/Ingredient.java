@@ -1,4 +1,4 @@
-package com.barops.backend.core.product;
+package com.barops.backend.core.ingredient;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -13,12 +13,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
 @Entity
-@Table(name = "products")
-public class Product {
+@Table(name = "ingredients")
+public class Ingredient {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -29,11 +28,11 @@ public class Product {
 
     private String description;
 
-    @DecimalMin(value = "0.0", inclusive = false)
-    private BigDecimal price;
+    @NotBlank
+    private String unit;
 
-    @Min(0)
-    private Integer stock;
+    @DecimalMin(value = "0.0", inclusive = false)
+    private BigDecimal costPrice;
 
     @ManyToOne
     @JoinColumn(name = "branch_id", nullable = false)
@@ -63,20 +62,20 @@ public class Product {
         this.description = description;
     }
 
-    public BigDecimal getPrice() {
-        return price;
+    public String getUnit() {
+        return unit;
     }
 
-    public void setPrice(BigDecimal price) {
-        this.price = price;
+    public void setUnit(String unit) {
+        this.unit = unit;
     }
 
-    public Integer getStock() {
-        return stock;
+    public BigDecimal getCostPrice() {
+        return costPrice;
     }
 
-    public void setStock(Integer stock) {
-        this.stock = stock;
+    public void setCostPrice(BigDecimal costPrice) {
+        this.costPrice = costPrice;
     }
 
     public Branch getBranch() {
