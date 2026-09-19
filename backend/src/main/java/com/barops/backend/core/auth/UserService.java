@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.barops.backend.core.auth.dto.UserCreateRequest;
 import com.barops.backend.core.tenant.Branch;
 import com.barops.backend.core.tenant.BranchRepository;
 import com.barops.backend.core.tenant.TenantContext;

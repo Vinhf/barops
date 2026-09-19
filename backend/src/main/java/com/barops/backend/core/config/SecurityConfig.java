@@ -3,11 +3,7 @@ package com.barops.backend.core.config;
 import com.barops.backend.core.auth.JwtAuthenticationConverter;
 import com.barops.backend.core.auth.JwtAuthenticationFilter;
 import com.barops.backend.core.auth.UserRepository;
-import io.jsonwebtoken.security.Keys;
-import java.nio.charset.StandardCharsets;
-import javax.crypto.SecretKey;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,8 +18,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -63,12 +57,6 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
-    }
-
-    @Bean
-    public JwtDecoder jwtDecoder(@Value("${jwt.secret}") String secret) {
-        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        return NimbusJwtDecoder.withSecretKey(key).build();
     }
 
     @Bean

@@ -17,7 +17,13 @@ public enum Role {
                     Permission.INGREDIENT_READ,
                     Permission.INGREDIENT_WRITE,
                     Permission.INGREDIENT_UPDATE,
-                    Permission.INGREDIENT_DELETE
+                    Permission.INGREDIENT_DELETE,
+                    Permission.RECIPE_READ,
+                    Permission.RECIPE_WRITE,
+                    Permission.RECIPE_UPDATE,
+                    Permission.RECIPE_DELETE,
+                    Permission.INVENTORY_READ,
+                    Permission.INVENTORY_WRITE
             );
             case MANAGER -> Set.of(
                     Permission.PRODUCT_READ,
@@ -25,11 +31,18 @@ public enum Role {
                     Permission.PRODUCT_UPDATE,
                     Permission.INGREDIENT_READ,
                     Permission.INGREDIENT_WRITE,
-                    Permission.INGREDIENT_UPDATE
+                    Permission.INGREDIENT_UPDATE,
+                    Permission.RECIPE_READ,
+                    Permission.RECIPE_WRITE,
+                    Permission.RECIPE_UPDATE,
+                    Permission.INVENTORY_READ,
+                    Permission.INVENTORY_WRITE
             );
             case STAFF -> Set.of(
                     Permission.PRODUCT_READ,
-                    Permission.INGREDIENT_READ
+                    Permission.INGREDIENT_READ,
+                    Permission.RECIPE_READ,
+                    Permission.INVENTORY_READ
             );
         };
     }

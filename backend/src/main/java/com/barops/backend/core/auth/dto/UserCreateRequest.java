@@ -1,4 +1,4 @@
-package com.barops.backend.core.auth;
+package com.barops.backend.core.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 

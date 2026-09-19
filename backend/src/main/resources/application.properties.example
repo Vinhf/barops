@@ -1,0 +1,13 @@
+spring.application.name=backend
+
+spring.datasource.url=jdbc:postgresql://your-host/your-database?sslmode=require
+spring.datasource.username=your-database-user
+spring.datasource.password=your-database-password
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.open-in-view=false
+
+springdoc.swagger-ui.path=/swagger-ui.html
+
+jwt.secret=replace-with-a-random-secret-at-least-32-characters
+jwt.expiration=86400000

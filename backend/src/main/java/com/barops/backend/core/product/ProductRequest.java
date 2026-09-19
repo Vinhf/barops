@@ -1,6 +1,7 @@
 package com.barops.backend.core.product;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
@@ -18,6 +19,8 @@ public class ProductRequest {
 
     @Min(0)
     private Integer stock;
+
+    private UUID recipeId;
 
     public String getName() {
         return name;
@@ -49,5 +52,13 @@ public class ProductRequest {
 
     public void setStock(Integer stock) {
         this.stock = stock;
+    }
+
+    public UUID getRecipeId() {
+        return recipeId;
+    }
+
+    public void setRecipeId(UUID recipeId) {
+        this.recipeId = recipeId;
     }
 }
