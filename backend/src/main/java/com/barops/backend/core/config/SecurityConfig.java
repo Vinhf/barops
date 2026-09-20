@@ -1,6 +1,5 @@
 package com.barops.backend.core.config;
 
-import com.barops.backend.core.auth.JwtAuthenticationConverter;
 import com.barops.backend.core.auth.JwtAuthenticationFilter;
 import com.barops.backend.core.auth.UserRepository;
 
@@ -26,11 +25,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationConverter jwtAuthenticationConverter;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationConverter jwtAuthenticationConverter, JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationConverter = jwtAuthenticationConverter;
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
@@ -69,10 +66,7 @@ public class SecurityConfig {
                 .permitAll()
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
-            );
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

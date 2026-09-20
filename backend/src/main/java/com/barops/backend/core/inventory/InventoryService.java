@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,12 +21,15 @@ import com.barops.backend.core.tenant.TenantContext;
 public class InventoryService {
 
     private final BranchIngredientStockRepository stockRepository;
+    private final InventoryTransactionRepository transactionRepository;
     private final BranchRepository branchRepository;
     private final IngredientRepository ingredientRepository;
 
-    public InventoryService(BranchIngredientStockRepository stockRepository, BranchRepository branchRepository,
+    public InventoryService(BranchIngredientStockRepository stockRepository,
+            InventoryTransactionRepository transactionRepository, BranchRepository branchRepository,
             IngredientRepository ingredientRepository) {
         this.stockRepository = stockRepository;
+        this.transactionRepository = transactionRepository;
         this.branchRepository = branchRepository;
         this.ingredientRepository = ingredientRepository;
     }
@@ -47,6 +52,7 @@ public class InventoryService {
                 .orElseGet(() -> createStock(branch, ingredient));
 
         BigDecimal amount = request.getQuantity();
+        BigDecimal beforeQuantity = stock.getQuantity();
         BigDecimal newQuantity;
         switch (request.getOperation().toUpperCase()) {
             case "IN" -> newQuantity = stock.getQuantity().add(amount);
@@ -60,7 +66,20 @@ public class InventoryService {
         }
 
         stock.setQuantity(newQuantity);
-        return stockRepository.save(stock);
+        BranchIngredientStock savedStock = stockRepository.save(stock);
+
+        InventoryTransaction transaction = new InventoryTransaction();
+        transaction.setBranch(branch);
+        transaction.setIngredient(ingredient);
+        transaction.setOperation(request.getOperation().toUpperCase());
+        transaction.setQuantity(amount);
+        transaction.setBeforeQuantity(beforeQuantity);
+        transaction.setAfterQuantity(newQuantity);
+        transaction.setReason(request.getReason());
+        transaction.setCreatedBy(currentUsername());
+        transactionRepository.save(transaction);
+
+        return savedStock;
     }
 
     private BranchIngredientStock createStock(Branch branch, Ingredient ingredient) {
@@ -88,5 +107,14 @@ public class InventoryService {
         }
 
         return branch;
+    }
+
+    public List<InventoryTransaction> findTransactions() {
+        return transactionRepository.findByBranchOrderByCreatedAtDesc(getCurrentBranch());
+    }
+
+    private String currentUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication == null ? "system" : authentication.getName();
     }
 }

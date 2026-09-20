@@ -29,6 +29,12 @@ public class InventoryController {
         return inventoryService.findAll();
     }
 
+    @GetMapping("/transactions")
+    @PreAuthorize("hasAuthority('INVENTORY_READ')")
+    public List<InventoryTransaction> findTransactions() {
+        return inventoryService.findTransactions();
+    }
+
     @PostMapping("/ingredients/{ingredientId}/adjust")
     @PreAuthorize("hasAuthority('INVENTORY_WRITE')")
     public BranchIngredientStock adjust(@PathVariable UUID ingredientId,

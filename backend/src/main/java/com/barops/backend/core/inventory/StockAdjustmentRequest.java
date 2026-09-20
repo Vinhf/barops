@@ -13,6 +13,8 @@ public class StockAdjustmentRequest {
     @NotBlank
     private String operation;
 
+    private String reason;
+
     public BigDecimal getQuantity() {
         return quantity;
     }
@@ -27,5 +29,13 @@ public class StockAdjustmentRequest {
 
     public void setOperation(String operation) {
         this.operation = operation;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 }
