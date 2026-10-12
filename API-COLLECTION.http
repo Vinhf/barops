@@ -1,0 +1,618 @@
+### BarOps POS - API Test Collection
+### Sprint 1: Catalog CRUD & Branch-Level Menu/Stock Management
+### This file documents the 5 new endpoint groups for manual testing
+
+### ============================================================================
+### SETUP: Authentication (prerequisite for all tests)
+### ============================================================================
+
+### 1. Register Owner
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "owner@barops.com",
+  "password": "Owner123!",
+  "fullName": "Owner User",
+  "role": "OWNER"
+}
+
+### 2. Login Owner (get JWT token)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "owner@barops.com",
+  "password": "Owner123!"
+}
+
+### Store the token from response and use as: Authorization: Bearer {token}
+
+---
+
+### ============================================================================
+### ENDPOINT GROUP 1: CATALOG PRODUCTS (Business-wide)
+### ============================================================================
+### API Route: /api/products
+### Entity: Product (business_id auto-assigned, tenant-scoped)
+### No price at catalog level (price is set per-branch in menu items)
+
+### 1.1 Create Product
+POST http://localhost:8080/api/products
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "name": "Vodka",
+  "displayNameEn": "Premium Vodka",
+  "isActive": true
+}
+
+### Expected: 201 Created, returns ProductResponse with id, name, displayNameEn, isActive, businessId
+
+### 1.2 Create another product (for recipe testing)
+POST http://localhost:8080/api/products
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "name": "Cranberry Juice",
+  "displayNameEn": "Cranberry Juice",
+  "isActive": true
+}
+
+### 1.3 List Products (with pagination)
+GET http://localhost:8080/api/products?page=0&size=20&sort=name,asc
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 200 OK, returns Page<ProductResponse> with products from current business only
+
+### 1.4 Get Single Product
+GET http://localhost:8080/api/products/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 200 OK or 404 Not Found if product doesn't exist
+
+### 1.5 Update Product
+PUT http://localhost:8080/api/products/1
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "name": "Premium Vodka",
+  "displayNameEn": "Premium Russian Vodka",
+  "isActive": true
+}
+
+### Expected: 200 OK, returns updated ProductResponse
+
+### 1.6 Deactivate Product (soft delete)
+DELETE http://localhost:8080/api/products/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 204 No Content
+### Note: This also deactivates all menu items for this product across all branches
+
+---
+
+### ============================================================================
+### ENDPOINT GROUP 2: CATALOG INGREDIENTS (Business-wide)
+### ============================================================================
+### API Route: /api/ingredients
+### Entity: Ingredient (business_id auto-assigned, tenant-scoped)
+### No stock quantity at catalog level (stock is per-branch in BranchIngredientStock)
+
+### 2.1 Create Ingredient
+POST http://localhost:8080/api/ingredients
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "name": "Vodka",
+  "unit": "ML"
+}
+
+### Expected: 201 Created, returns IngredientResponse with id, name, unit, businessId
+
+### 2.2 Create more ingredients
+POST http://localhost:8080/api/ingredients
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "name": "Cranberry Juice",
+  "unit": "ML"
+}
+
+---
+
+POST http://localhost:8080/api/ingredients
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "name": "Lime",
+  "unit": "PIECE"
+}
+
+### 2.3 List Ingredients (with pagination)
+GET http://localhost:8080/api/ingredients?page=0&size=20&sort=name,asc
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 200 OK, returns Page<IngredientResponse> with ingredients from current business only
+
+### 2.4 Get Single Ingredient
+GET http://localhost:8080/api/ingredients/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 200 OK or 404 Not Found
+
+### 2.5 Update Ingredient
+PUT http://localhost:8080/api/ingredients/1
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "name": "Premium Vodka",
+  "unit": "ML"
+}
+
+### Expected: 200 OK, returns updated IngredientResponse
+
+### 2.6 Delete Ingredient
+DELETE http://localhost:8080/api/ingredients/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 204 No Content
+### Note: Will fail (409 Conflict) if ingredient has active recipes or stock records
+
+---
+
+### ============================================================================
+### ENDPOINT GROUP 3: RECIPES (Bills of Materials)
+### ============================================================================
+### API Route: /api/products/{productId}/recipe
+### Entity: Recipe (business_id auto-assigned, product_id PK, ingredient_id PK, unique per product)
+### Recipe is a join table: Product → Recipe ← Ingredient (with quantity)
+
+### 3.1 Create Recipe (add ingredient to product)
+POST http://localhost:8080/api/products/1/recipe
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "ingredientId": 1,
+  "quantity": 50.0
+}
+
+### Expected: 201 Created, returns RecipeResponse with productId, ingredientId, quantity
+
+### 3.2 Add another ingredient to same product
+POST http://localhost:8080/api/products/1/recipe
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "ingredientId": 2,
+  "quantity": 30.0
+}
+
+### Expected: 201 Created
+### Note: Duplicate ingredientId for same product will fail (409 Conflict)
+
+### 3.3 List Recipe (all ingredients for a product)
+GET http://localhost:8080/api/products/1/recipe
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 200 OK, returns List<RecipeResponse> with all ingredients for productId=1
+
+### 3.4 Get Single Recipe Entry
+GET http://localhost:8080/api/products/1/recipe/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 200 OK or 404 Not Found (if ingredient not in recipe)
+
+### 3.5 Update Recipe Entry (change ingredient quantity)
+PUT http://localhost:8080/api/products/1/recipe/1
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "quantity": 60.0
+}
+
+### Expected: 200 OK, returns updated RecipeResponse
+
+### 3.6 Delete Recipe Entry (remove ingredient from product)
+DELETE http://localhost:8080/api/products/1/recipe/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 204 No Content
+### Note: Soft deletes the recipe entry (sets is_deleted=true or removes record)
+
+---
+
+### ============================================================================
+### ENDPOINT GROUP 4: BRANCH MENU ITEMS (Per-Branch Pricing & Availability)
+### ============================================================================
+### API Route: /api/branches/{branchId}/menu-items
+### Entity: BranchMenuItem (branch_id + product_id, branch-scoped)
+### This is where pricing and availability are managed
+
+### Prerequisites:
+### - Product must exist in catalog (from endpoint group 1)
+### - Branch must exist in system (managed by Branch management endpoints)
+### - Current user's branchId must match or user is OWNER (branchId = null)
+
+### 4.1 Add Product to Branch Menu (set price and availability)
+POST http://localhost:8080/api/branches/1/menu-items
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "productId": 1,
+  "price": 15.50,
+  "available": true
+}
+
+### Expected: 201 Created, returns BranchMenuItemResponse with branchId, productId, price, available
+
+### 4.2 Add another product to menu
+POST http://localhost:8080/api/branches/1/menu-items
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "productId": 2,
+  "price": 8.00,
+  "available": true
+}
+
+### 4.3 List Menu Items for Branch
+GET http://localhost:8080/api/branches/1/menu-items?page=0&size=50
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 200 OK, returns Page<BranchMenuItemResponse> with menu items for branchId=1 only
+
+### 4.4 Get Single Menu Item
+GET http://localhost:8080/api/branches/1/menu-items/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 200 OK or 404 Not Found
+
+### 4.5 Update Menu Item (change price or availability)
+PUT http://localhost:8080/api/branches/1/menu-items/1
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "price": 16.50,
+  "available": false
+}
+
+### Expected: 200 OK, returns updated BranchMenuItemResponse
+
+### 4.6 Remove Product from Branch Menu
+DELETE http://localhost:8080/api/branches/1/menu-items/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 204 No Content
+
+### 4.7 Tenant Isolation Test (should fail for other business)
+### After creating a second business with different branchId, accessing branchId=1 should fail
+GET http://localhost:8080/api/branches/1/menu-items
+Authorization: Bearer OTHER_BUSINESS_TOKEN
+
+### Expected: 403 Forbidden (you don't have access to this branch)
+
+---
+
+### ============================================================================
+### ENDPOINT GROUP 5: BRANCH INVENTORY STOCK
+### ============================================================================
+### API Route: /api/branches/{branchId}/inventory/stocks
+### Entity: BranchIngredientStock (branch_id + ingredient_id, branch-scoped, uses optimistic locking)
+### This is where per-branch ingredient quantities are managed
+
+### Prerequisites:
+### - Ingredient must exist in catalog (from endpoint group 2)
+### - Branch must exist in system
+### - Current user's branchId must match or user is OWNER
+
+### 5.1 Add Ingredient Stock to Branch
+POST http://localhost:8080/api/branches/1/inventory/stocks
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "ingredientId": 1,
+  "stockQuantity": 1000.000
+}
+
+### Expected: 201 Created, returns BranchStockResponse with branchId, ingredientId, stockQuantity, version=1
+
+### 5.2 Add more ingredients to stock
+POST http://localhost:8080/api/branches/1/inventory/stocks
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "ingredientId": 2,
+  "stockQuantity": 500.000
+}
+
+---
+
+POST http://localhost:8080/api/branches/1/inventory/stocks
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "ingredientId": 3,
+  "stockQuantity": 200.000
+}
+
+### 5.3 List Stock for Branch
+GET http://localhost:8080/api/branches/1/inventory/stocks?page=0&size=50
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 200 OK, returns Page<BranchStockResponse> with stocks for branchId=1 only
+
+### 5.4 Get Single Stock Record
+GET http://localhost:8080/api/branches/1/inventory/stocks/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 200 OK or 404 Not Found
+
+### 5.5 Update Stock Quantity (with optimistic locking)
+PUT http://localhost:8080/api/branches/1/inventory/stocks/1
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "stockQuantity": 950.000,
+  "version": 1
+}
+
+### Expected: 200 OK, returns updated BranchStockResponse with version=2
+### Note: If version is incorrect (concurrent update), returns 409 Conflict (OptimisticLockException)
+
+### 5.6 Delete Stock Record
+DELETE http://localhost:8080/api/branches/1/inventory/stocks/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 204 No Content
+### Note: Will fail (409 Conflict) if stockQuantity > 0
+
+### 5.7 Tenant Isolation Test (should fail for other business)
+GET http://localhost:8080/api/branches/1/inventory/stocks
+Authorization: Bearer OTHER_BUSINESS_TOKEN
+
+### Expected: 403 Forbidden (you don't have access to this branch)
+
+---
+
+### ============================================================================
+### ERROR SCENARIOS (for comprehensive testing)
+### ============================================================================
+
+### E1: Invalid Authorization
+GET http://localhost:8080/api/products
+Authorization: Bearer INVALID_TOKEN
+
+### Expected: 401 Unauthorized
+
+### E2: Tenant Isolation Violation (view other business's product)
+GET http://localhost:8080/api/products/999
+Authorization: Bearer OTHER_BUSINESS_TOKEN
+
+### Expected: 404 Not Found (returns as if product doesn't exist for security)
+
+### E3: Branch Access Violation (non-owner accessing other branch)
+GET http://localhost:8080/api/branches/2/menu-items
+Authorization: Bearer BRANCH_1_STAFF_TOKEN
+
+### Expected: 403 Forbidden (staff can only access their own branch)
+
+### E4: Duplicate Menu Item
+POST http://localhost:8080/api/branches/1/menu-items
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "productId": 1,
+  "price": 20.00,
+  "available": true
+}
+
+### Expected: 409 Conflict (product already in menu for this branch)
+
+### E5: Invalid Ingredient Unit Change (ingredient has recipes)
+PUT http://localhost:8080/api/ingredients/1
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "name": "Vodka",
+  "unit": "PIECE"
+}
+
+### Expected: 409 Conflict (cannot change unit - has active recipes/stock)
+
+### E6: Delete Ingredient with Active Stock
+DELETE http://localhost:8080/api/ingredients/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 409 Conflict (ingredient has active stock in branches)
+
+### E7: Delete Stock with Non-zero Quantity
+DELETE http://localhost:8080/api/branches/1/inventory/stocks/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 409 Conflict (stock quantity must be 0 before deletion)
+
+---
+
+### ============================================================================
+### FLOW TEST: Complete Workflow
+### ============================================================================
+
+### Step 1: Create Vodka product (1)
+POST http://localhost:8080/api/products
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "name": "Vodka",
+  "displayNameEn": "Premium Vodka",
+  "isActive": true
+}
+
+### Step 2: Create Cranberry Juice product (2)
+POST http://localhost:8080/api/products
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "name": "Cranberry Juice",
+  "displayNameEn": "Cranberry Juice",
+  "isActive": true
+}
+
+### Step 3: Create Vodka ingredient (1)
+POST http://localhost:8080/api/ingredients
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "name": "Vodka",
+  "unit": "ML"
+}
+
+### Step 4: Create Cranberry ingredient (2)
+POST http://localhost:8080/api/ingredients
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "name": "Cranberry Juice",
+  "unit": "ML"
+}
+
+### Step 5: Create recipe: Cranberry Vodka (product 2 = mix of product 1 + ingredient 2)
+POST http://localhost:8080/api/products/2/recipe
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "ingredientId": 1,
+  "quantity": 50.0
+}
+
+### Step 6: Add Cranberry juice to recipe
+POST http://localhost:8080/api/products/2/recipe
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "ingredientId": 2,
+  "quantity": 30.0
+}
+
+### Step 7: Add Vodka to Branch 1 menu at 15.50
+POST http://localhost:8080/api/branches/1/menu-items
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "productId": 1,
+  "price": 15.50,
+  "available": true
+}
+
+### Step 8: Add Cranberry Vodka to Branch 1 menu at 12.00
+POST http://localhost:8080/api/branches/1/menu-items
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "productId": 2,
+  "price": 12.00,
+  "available": true
+}
+
+### Step 9: Stock Branch 1 with Vodka (1000 ML)
+POST http://localhost:8080/api/branches/1/inventory/stocks
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "ingredientId": 1,
+  "stockQuantity": 1000.000
+}
+
+### Step 10: Stock Branch 1 with Cranberry (500 ML)
+POST http://localhost:8080/api/branches/1/inventory/stocks
+Content-Type: application/json
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+{
+  "ingredientId": 2,
+  "stockQuantity": 500.000
+}
+
+### Step 11: Verify Branch 1 Menu
+GET http://localhost:8080/api/branches/1/menu-items
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 2 menu items (Vodka, Cranberry Vodka)
+
+### Step 12: Verify Branch 1 Stock
+GET http://localhost:8080/api/branches/1/inventory/stocks
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: 2 stock items (Vodka, Cranberry Juice)
+
+### Step 13: Deactivate Vodka product (should disable menu items)
+DELETE http://localhost:8080/api/products/1
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Step 14: Verify menu items for product 1 are disabled
+GET http://localhost:8080/api/branches/1/menu-items
+Authorization: Bearer YOUR_OWNER_TOKEN
+
+### Expected: Menu item for product 1 should have available=false
+
+---
+
+### ============================================================================
+### NOTES FOR INTEGRATION TESTING
+### ============================================================================
+
+### Database Setup:
+### - DDL-auto is set to 'update', so tables are auto-created on startup
+### - No seed data is included; all data is created via API calls
+### - Each test should be independent (can run in any order)
+
+### Concurrency Testing (for Sprint 2):
+### - Use version numbers in BranchStockResponse to simulate concurrent updates
+### - First client updates with version=1, gets back version=2
+### - Second client tries to update with version=1, gets 409 Conflict
+### - This tests optimistic locking (prepared for stock deduction in Sprint 2)
+
+### Tenant/Branch Isolation Testing:
+### - Create two businesses with separate owner accounts
+### - Create branches under each business
+### - Verify that staff from Business A cannot access Business B's products/branches
+### - Verify that Owner can access all branches (branchId = null in JWT)
+
+### Schema Notes:
+### - Old columns: Product.price, Ingredient.stock_quantity still exist in DB (not dropped by Hibernate)
+### - These columns are ignored by application (not mapped to entity fields)
+### - In production, use explicit migration script to drop unused columns
+
+### Known Limitations (Sprint 1):
+### - No bulk recipe/stock operations (single-item API only)
+### - No soft delete for Ingredient (hard delete only, blocked by references)
+### - StockTransfer entity exists but logic is deferred to Sprint 2
+### - No OptimisticLockException handler (will return 500 instead of 409 in concurrent scenarios)
