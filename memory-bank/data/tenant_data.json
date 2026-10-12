@@ -1,0 +1,1 @@
+{"businesses": [{"id": 1, "name": "BarOps HQ"}, {"id": 2, "name": "BarOps Branch 1"}], "branches": [{"id": 101, "business_id": 1, "name": "Main Branch"}, {"id": 102, "business_id": 2, "name": "Branch 1"}]}

@@ -16,7 +16,7 @@ barops/
  │       │                       JwtAuthenticationFilter, CallerBranchContext,
  │       │                       BranchAccessGuard, AuthController, UserController
  │       ├─ core/config/      → SecurityConfig, OpenApiConfig (Swagger)
- │       └─ pos/              → chưa code (Ingredient/Product/Recipe/Order — Sprint 1 Giai đoạn B)
+ │       └─ pos/              → catalog, Recipe, menu và tồn kho theo Branch
  ├─ frontend/                 → Next.js + TypeScript (skeleton, build UI từ Sprint 4)
  └─ docs/                     → ERD, sprint plan
 ```
@@ -62,7 +62,22 @@ Frontend chạy ở `http://localhost:3000`.
 - [x] Sprint 0: package structure, `Business`/`Branch` + tenant context, Docker Postgres.
 - [x] Sprint 1 — Giai đoạn A: Auth (JWT access+refresh mang `businessId`+`branchId`+`role`),
       `BranchAccessGuard`, Swagger UI.
-- [ ] Sprint 1 — Giai đoạn B: CRUD `Product`/`Ingredient`/`Recipe` (catalog) +
-      `BranchMenuItem`/`BranchIngredientStock` (theo chi nhánh).
+- [ ] Sprint 1 — Giai đoạn B: Đã triển khai CRUD API `Product`/`Ingredient`/`Recipe` (catalog),
+      `BranchMenuItem`/`BranchIngredientStock` theo chi nhánh; còn thiếu test tenant isolation
+      và kiểm thử đầu-cuối.
+- [ ] Sprint 2: `StockTransfer` hiện mới có model; logic chuyển kho transaction còn phải làm.
 - [ ] ERD vẽ hình chi tiết (`docs/ERD.md` còn ở dạng chữ).
 - [ ] GitHub Project board + label (làm trên GitHub, không phải trong code).
+
+### API nghiệp vụ hiện có
+- `GET/POST/PUT/DELETE /api/products` — DELETE là ngừng bán mềm.
+- `GET/POST/PUT/DELETE /api/ingredients` — không xoá nếu còn được recipe/tồn kho tham chiếu.
+- `GET/POST/PUT/DELETE /api/products/{productId}/recipe`
+- `GET/POST/PUT/DELETE /api/branches/{branchId}/menu-items`
+- `GET/POST/PUT/DELETE /api/branches/{branchId}/inventory/stocks`
+
+API catalog hỗ trợ phân trang qua `page` và `size`; thao tác ghi yêu cầu role Owner/Manager.
+API theo chi nhánh kiểm tra quyền branch từ JWT và xác nhận branch thuộc Business hiện tại.
+Vì schema dùng `ddl-auto: update`, cột `price` trên `products` và `stock_quantity` trên
+`ingredients` của schema dev cũ sẽ không tự bị xoá; ứng dụng không còn dùng chúng. Cần migration
+riêng trước khi thay đổi môi trường có dữ liệu cần bảo toàn.

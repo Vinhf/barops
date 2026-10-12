@@ -1,6 +1,6 @@
 package com.barops.pos.promotion;
 
-import com.barops.core.tenant.BaseTenantEntity;
+import com.barops.core.tenant.BaseBranchEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,6 +11,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 /**
@@ -21,7 +22,16 @@ import java.time.LocalTime;
 @Setter
 @Entity
 @Table(name = "promotion_rules")
-public class PromotionRule extends BaseTenantEntity {
+public class PromotionRule extends BaseBranchEntity {
+
+    @Column(name = "event_name")
+    private String eventName;
+
+    @Column(name = "valid_from")
+    private LocalDate validFrom;
+
+    @Column(name = "valid_to")
+    private LocalDate validTo;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "day_of_week", nullable = false)

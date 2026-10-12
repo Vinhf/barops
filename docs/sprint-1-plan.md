@@ -1,7 +1,7 @@
 > **Cập nhật sau khi đổi hướng sang mô hình 1 Business — nhiều Branch** (xem `docs/ERD.md`):
-> Auth giờ phải mang thêm `branch_id` (nullable) trong JWT, và cần thêm `BranchAccessGuard`
-> để chặn Staff/Manager thao tác nhầm chi nhánh khác. CRUD Ingredient/Product/Recipe tách
-> thành catalog (Business) + BranchMenuItem/BranchIngredientStock (Branch) — xem Giai đoạn B mới.
+> Auth mang `branch_id` (nullable) trong JWT, và dùng `BranchAccessGuard` để chặn Staff/Manager
+> thao tác nhầm chi nhánh khác. Catalog Product/Ingredient/Recipe dùng chung Business;
+> giá/menu và tồn kho được lưu theo Branch như mô tả trong `docs/ERD.md`.
 
 # Sprint 1 — Auth + CRUD Ingredient/Product/Recipe (2 tuần)
 
@@ -12,6 +12,7 @@
 - [ ] JWT chứa `business_id` + `role`, mọi request sau đó tự xác định đúng tenant qua `TenantContext`
 - [ ] Phân quyền hoạt động: Staff không gọi được endpoint chỉ dành cho Owner/Manager
 - [ ] CRUD đầy đủ cho Ingredient, Product, Recipe — có validate, có phân trang cơ bản
+- [ ] CRUD menu và tồn kho theo branch, có kiểm tra quyền branch
 - [ ] Test: tạo 2 business demo, xác nhận Business A không thấy được Ingredient/Product của Business B (đây là test quan trọng nhất — bảo mật multi-tenant)
 - [ ] Postman collection hoặc file `.http` để demo/test tay được
 
@@ -34,11 +35,12 @@
 ### Giai đoạn B — CRUD nghiệp vụ (khoảng 4-5 ngày tiếp)
 Làm nhanh hơn Auth nhiều vì đã có `TenantAwareRepository` làm sẵn từ Sprint 0.
 
-8. **Ingredient**: entity (`extends BaseTenantEntity`, fields: `name`, `unit` enum hoặc string ml/g/cái, `stockQuantity` — dùng `NUMERIC`/`BigDecimal`, KHÔNG dùng `double` vì sai số). Repository, Service, Controller (`GET/POST/PUT/DELETE /api/ingredients`).
-9. **Product**: entity (`name`, `displayNameEn`, `price` là `BigDecimal`, `isActive` boolean mặc định true). CRUD tương tự.
-10. **Recipe (BOM)**: entity nối `Product` — `Ingredient` kèm `quantity`. Đây là bảng quan hệ N-N có thêm dữ liệu (`quantity`) nên phải là entity riêng, không dùng `@ManyToMany` thuần. Endpoint: `POST /api/products/{id}/recipe` (thêm dòng recipe), `GET /api/products/{id}/recipe` (xem đầy đủ BOM của 1 món).
-11. **Validation**: dùng `@Valid` + Bean Validation (`@NotBlank`, `@Positive`...) trên DTO request, không validate trực tiếp trên entity.
-12. **Exception handling chung**: 1 `@RestControllerAdvice` xử lý lỗi validate/not-found trả về JSON lỗi thống nhất (chưa có ở Sprint 0, nên làm ngay đầu giai đoạn B để dùng xuyên suốt).
+8. **Ingredient catalog**: entity (`extends BaseTenantEntity`, fields `name`, `unit`). Tồn kho KHÔNG nằm trên Ingredient mà nằm trong `BranchIngredientStock`. CRUD tại `/api/ingredients`.
+9. **Product catalog**: entity (`name`, `displayNameEn`, `isActive` mặc định true), không chứa giá. Giá/trạng thái bán của từng chi nhánh nằm trong `BranchMenuItem`. CRUD Product và menu tại `/api/products` và `/api/branches/{branchId}/menu-items`.
+10. **Recipe (BOM)**: entity nối `Product` — `Ingredient` kèm `quantity` và `business_id`. Endpoint `GET/POST/PUT/DELETE /api/products/{id}/recipe`.
+11. **Branch stock**: CRUD tại `/api/branches/{branchId}/inventory/stocks`; mỗi chi nhánh có tồn kho riêng, dùng `BigDecimal` và optimistic locking.
+12. **Validation**: dùng `@Valid` + Bean Validation (`@NotBlank`, `@Positive`...) trên DTO request, không validate trực tiếp trên entity.
+13. **Exception handling chung**: 1 `@RestControllerAdvice` trả lỗi validate/not-found/conflict theo JSON thống nhất.
 
 ### Giai đoạn C — Test + đóng sprint (2-3 ngày cuối)
 13. **Test tenant isolation** (quan trọng nhất, đừng bỏ qua): script hoặc test tự động — tạo Business A + B qua `/api/auth/register`, đăng nhập từng bên, tạo Ingredient ở A, gọi API bằng token của B, xác nhận **không thấy** Ingredient đó.

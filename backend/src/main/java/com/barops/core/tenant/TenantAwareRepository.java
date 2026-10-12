@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.repository.NoRepositoryBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +35,10 @@ public interface TenantAwareRepository<T extends BaseTenantEntity>
 
     default List<T> findAllForCurrentTenant() {
         return findAll(currentTenantSpec());
+    }
+
+    default Page<T> findAllForCurrentTenant(Pageable pageable) {
+        return findAll(currentTenantSpec(), pageable);
     }
 
     default Optional<T> findByIdForCurrentTenant(Long id) {

@@ -1,6 +1,6 @@
 package com.barops.pos.order;
 
-import com.barops.core.tenant.BaseTenantEntity;
+import com.barops.core.tenant.BaseBranchEntity;
 import com.barops.pos.table.DiningTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,7 +30,7 @@ import java.time.LocalDate;
     name = "orders",
     indexes = @Index(name = "idx_orders_business_date", columnList = "business_id, business_date")
 )
-public class Order extends BaseTenantEntity {
+public class Order extends BaseBranchEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "table_id", nullable = false)

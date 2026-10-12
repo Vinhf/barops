@@ -1,6 +1,6 @@
 package com.barops.pos.table;
 
-import com.barops.core.tenant.BaseTenantEntity;
+import com.barops.core.tenant.BaseBranchEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,7 +18,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "tables")
-public class DiningTable extends BaseTenantEntity {
+public class DiningTable extends BaseBranchEntity {
 
     @Column(nullable = false)
     private String name;

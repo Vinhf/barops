@@ -1,11 +1,14 @@
 package com.barops.pos.product;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.barops.core.tenant.TenantAwareRepository;
 
 import java.util.List;
+import java.util.Optional;
 
-public interface RecipeRepository extends JpaRepository<Recipe, Long> {
+public interface RecipeRepository extends TenantAwareRepository<Recipe> {
 
-    /** Sprint 2 dùng để lấy toàn bộ nguyên liệu cần trừ kho khi 1 Product được order. */
-    List<Recipe> findByProductId(Long productId);
+    List<Recipe> findAllByProductIdAndBusinessId(Long productId, Long businessId);
+    Optional<Recipe> findByIdAndProductIdAndBusinessId(Long id, Long productId, Long businessId);
+    boolean existsByProductIdAndIngredientIdAndBusinessId(Long productId, Long ingredientId, Long businessId);
+    boolean existsByIngredientIdAndBusinessId(Long ingredientId, Long businessId);
 }

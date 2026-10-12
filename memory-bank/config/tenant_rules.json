@@ -1,0 +1,1 @@
+{"tenant_isolation": true, "branch_specific": true, "security_rules": ["BranchAccessGuard.assertAccess()", "TenantContext.setBusinessId()"]}
